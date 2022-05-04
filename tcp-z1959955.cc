@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <iostream>
+using namespace std;
 
 int main(int argc, char *argv[])
 {
@@ -17,6 +18,13 @@ int main(int argc, char *argv[])
     ssize_t received;
     struct sockaddr_in echoserver; // structure address of server
     struct sockaddr_in echoclient; // structure address of client
+    //create sock
+    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        perror("Failed to create socket");
+        exit(EXIT_FAILURE);
+    }
+
     //construct the server sockaddr_in structure
     memset(&echoserver, 0, sizeof(echoserver));
     echoserver.sin_family = AF_INET;
@@ -40,6 +48,7 @@ int main(int argc, char *argv[])
     //run until cancelled
     while((newSock = accept(sock, (struct sockaddr*) &echoclient, &clientlen)) != -1)
     {
+        //forking
         cerr << "Client connected: " << inet_ntoa(echoclient.sin_addr) << '\n';
         if((received = read(newSock, buffer, 256)) == -1)
         {
