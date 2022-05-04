@@ -46,22 +46,32 @@ int main(int argc, char *argv[])
     }
 
     //run until cancelled
+    //clientlen = sizeof(echoclient);
     while((newSock = accept(sock, (struct sockaddr*) &echoclient, &clientlen)) != -1)
     {
-        //forking
-        cerr << "Client connected: " << inet_ntoa(echoclient.sin_addr) << '\n';
-        if((received = read(newSock, buffer, 256)) == -1)
+        if(fork())
         {
-            perror("read failed");
-            exit(2);
+            close(newSock);
+        }
+        else
+        {
+            //forking
+            cerr << "Client connected: " << inet_ntoa(echoclient.sin_addr) << '\n';
+            if((received = read(newSock, buffer, 256)) == -1)
+            {
+                perror("read failed");
+                exit(2);
+            }
+
+            if((write(newSock, buffer, received)) == -1)
+            {
+                perror("write mismatch");
+                exit(3);
+            }
+            close(newSock);
+            exit(0);
         }
 
-        if((write(newSock, buffer, received)) == -1)
-        {
-            perror("write mismatch");
-            exit(3);
-        }
-        close(newSock);
     }
     close(sock);
 
