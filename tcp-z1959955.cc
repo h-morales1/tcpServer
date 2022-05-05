@@ -74,6 +74,38 @@ string get_req_filn(string s);
 * @param s String to process
 *****************************************************************************/
 void chomp(char *s);
+/**
+* Starts a simple HTTP server
+*
+* This function will take in a port number
+ * and a directory as parameters, if both are
+ * not passed in during launch, then an error occurs and
+ * the program exits. Otherwise the function
+ * checks to make sure that the directory passed in
+ * exists, if it does not then an error occurs and the program
+ * exits. Otherwise, the program will create a tcp socket, if no
+ * error occurs then it proceeds to create the server sockaddr_in
+ * structure. It will attempt to bind the socket, if no error occurs then
+ * it proceeds to call the listen() to listen for connections. If no error
+ * occurs then the program will enter a loop to accept connnections with
+ * the accept() syscall. This loop occurs until an error happens during
+ * the processing of a client request or if the server is terminated.
+ * Once a connection is accepted, the function will fork() and create a child
+ * process that will handle the client request and the parent process closes the socket.
+ * The child process will detect if the client request is a directory or a file, if
+ * it is a directory then the function attempts to search for the directory, if it
+ * does not exist, then an error occurs and the connection is closed, but the server remains
+ * online. If the directory exists then the function will search for an index.html file, if one
+ * is found then its contents are sent to the client, otherwise a list of files is sent
+ * to the client. If the client instead sends a request with a filename, the function
+ * will search for the file, if found, the program will send the file contents to the client,
+ * otherwise an error occurs and the connection is closed, although the server will remain online.
+*
+ * @note This server does not work with browsers yet, the way the request is handled needs to be reworked to handle browser requests
+* @param argc Count of arguments
+* @param argv Port number and webroot directory
+* @result num Success or Failure
+*****************************************************************************/
 int
 main(int argc, char *argv[])
 {
