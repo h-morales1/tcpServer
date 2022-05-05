@@ -131,32 +131,25 @@ int main(int argc, char *argv[])
 
                 //is the last character in string a / <-- signifies dir
                 string temp_cl_rq = client_req;
-                char tmp[500];
-                strcpy(tmp, temp_cl_rq.c_str());
-                for(char *p = tmp + strlen(tmp)-1;*p == '\r' || *p == '\n';p--)
-                {
-                    cout << *p << '\n';
-                    *p = '\0';
-                }
-                temp_cl_rq = string(tmp);
+
                 size_t cl_req_size = temp_cl_rq.length();
                 cout << "SIZE: " << cl_req_size << '\n';
                 //size_t tp_rq_size = temp_cl_rq.length();
                 char ending = temp_cl_rq.back();
                 cout << "Ending: " << ending << "\n";
-                char endingC = client_req.at(cl_req_size-2);
-                size_t final_pos = temp_cl_rq.find_last_of("/");
-                if((final_pos != std::string::npos) && (final_pos == cl_req_size - 3))
+                //char endingC = client_req.at(cl_req_size-2);
+                //size_t final_pos = temp_cl_rq.find_last_of("/");
+                if(ending == '/')
                 {
                     //searching for dir
-                    cout << "/ index: " << final_pos << '\n';
+                    //cout << "/ index: " << final_pos << '\n';
                     cout << "YOURE LOOKING FOR A DIR!" << '\n';
                 }
                 else
                 {
                     cout << "Looking for a file" << '\n';
                 }
-                cout << "endingC: " << endingC << '\n';
+                //cout << "endingC: " << endingC << '\n';
 
             }
 
