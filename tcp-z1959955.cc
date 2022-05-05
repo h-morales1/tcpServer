@@ -10,9 +10,10 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <fcntl.h>
 using namespace std;
 
-
+int r_file_to_buffer(int fd, char buffer[], int b_size);
 string get_req_dir(string s);
 string get_req_filn(string s);
 void chomp(char *s);
@@ -26,7 +27,8 @@ int main(int argc, char *argv[])
     struct sockaddr_in echoserver; // structure address of server
     struct sockaddr_in echoclient; // structure address of client
     DIR* dire_argpath;
-    struct dirent *dire_argpath_dirent;
+    //struct dirent *dire_argpath_dirent;
+
 
     //exit if not enough arguments
     if(argc < 2)
@@ -34,6 +36,8 @@ int main(int argc, char *argv[])
         perror("Usage: ./z1959955 port path");
         exit(EXIT_FAILURE);
     }
+
+    string wb_root_path = string(argv[2]);
 
     //open dir passed in
     dire_argpath = opendir(argv[2]);
@@ -109,14 +113,28 @@ int main(int argc, char *argv[])
             //no directory passed in, just use webroot: req = GET /
             if(client_req.compare("/") == 0)
             {
+                cout << "TEST" << '\n';
                //check directory for an index.html
                string webrt_files;
-               while((dire_argpath_dirent = readdir(dire_argpath)) != NULL) // look through dir
+               bool index_in_rt = false;
+               DIR* dire_wbrtpath;
+               struct dirent *dire_wbrtpath_dirent;
+                //open dir passed in
+                dire_wbrtpath = opendir(argv[2]);
+                if(dire_wbrtpath == 0) // exit if path doesn't exist
+                {
+                    perror(argv[2]);
+                    exit(EXIT_FAILURE);
+                }
+                //dir exists so look through dir for index.html
+               while((dire_wbrtpath_dirent = readdir(dire_wbrtpath)) != NULL) // look through dir
                {
-                   string f_name = dire_argpath_dirent->d_name;
+                   string f_name = dire_wbrtpath_dirent->d_name;
                    if(f_name.compare("index.html") == 0)
                    {
                        //found index.html in directory
+                       index_in_rt = true;
+                       break;
                    }
                    else
                    {
@@ -128,9 +146,32 @@ int main(int argc, char *argv[])
                    }
 
                }
-               //add webrt file list to buffer
-                strncpy(buffer, webrt_files.c_str(), sizeof(buffer)); // add file list to buffer
-                buffer[sizeof(buffer)-1] = '\0';
+               if(index_in_rt)
+               {
+                   //index.html is found in webroot
+                   //write contents of index to buffer
+                   string wbr_index = wb_root_path + "/index.html";
+                   cout << "WBR: " << wbr_index << "\n";
+                   int fd = open(wbr_index.c_str(), O_RDONLY);
+                   ssize_t nr;
+                   nr = r_file_to_buffer(fd, buffer, (sizeof(buffer)-1)); // put contents of file into buffer for client
+
+                   if(nr == -1)
+                   {
+                       perror("reading file to buffer");
+                       return 3;
+                   }
+                   close(fd);
+               }
+               else
+               {
+                   //index.html isnt found in webroot
+                   //add webrt file list to buffer
+                   cout << "WEBRT FILES: " << webrt_files << '\n';
+                   strncpy(buffer, webrt_files.c_str(), sizeof(buffer)); // add file list to buffer
+                   buffer[sizeof(buffer)-1] = '\0';
+               }
+
             }
             else
             {
@@ -154,9 +195,8 @@ int main(int argc, char *argv[])
                     dire_fnpath = opendir(final_path.c_str());
                     if(dire_fnpath == 0) // exit if path doesn't exist
                     {
-                        perror(argv[2]);
-                        // write error to buffer for client
-                        //stpcpy(buffer, "")
+                        string dir_not_ex = "Error: Directory " + final_path + " does not exist";
+                        perror(dir_not_ex.c_str());
                         exit(EXIT_FAILURE);
                     }
                     //dir exists so find index.html
@@ -184,6 +224,17 @@ int main(int argc, char *argv[])
                     if(found_index)
                     {
                         //write contents of index to buffer
+                        final_path = final_path + "index.html";
+                        int fd = open(final_path.c_str(), O_RDONLY);
+                        ssize_t nr;
+                        nr = r_file_to_buffer(fd, buffer, (sizeof(buffer)-1)); // put contents of file into buffer for client
+
+                        if(nr == -1)
+                        {
+                            perror("reading file to buffer");
+                            return 3;
+                        }
+                        close(fd);
                     }
                     else
                     {
@@ -211,8 +262,6 @@ int main(int argc, char *argv[])
                     if(dire_freqpath == 0) // exit if path doesn't exist
                     {
                         perror(argv[2]);
-                        // write error to buffer for client
-                        //stpcpy(buffer, "")
                         exit(EXIT_FAILURE);
                     }
                     //dir does exist so we  can search for file
@@ -236,8 +285,18 @@ int main(int argc, char *argv[])
                     {
                         //we found it so write its contents to buffer
                         string not_found = "We found the file";
-                        strncpy(buffer, not_found.c_str(), sizeof(buffer)); // add file list to buffer
-                        buffer[sizeof(buffer)-1] = '\0';
+
+                        //write contents of index to buffer
+                        final_req_dir = final_req_dir + req_filename;
+                        int fd = open(final_req_dir.c_str(), O_RDONLY);
+                        ssize_t nr;
+                        nr = r_file_to_buffer(fd, buffer, (sizeof(buffer)-1)); // put contents of file into buffer for client
+                        if(nr == -1)
+                        {
+                            perror("reading file to buffer");
+                            return 3;
+                        }
+                        close(fd);
                     }
                     else
                     {
@@ -267,6 +326,20 @@ int main(int argc, char *argv[])
     close(sock);
 
     return 0;
+}
+
+int r_file_to_buffer(int fd, char buffer[], int b_size)
+{
+    //read file into buffer
+    ssize_t nr;
+    nr = read(fd, buffer, b_size);
+    if(nr == -1)
+    {
+        return nr;
+    }
+
+    buffer[nr] = 0;
+    return nr;
 }
 
 string get_req_filn(string s) // get filename from request
