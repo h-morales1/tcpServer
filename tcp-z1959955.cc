@@ -64,6 +64,15 @@ string get_req_dir(string s);
 * @result filename A file name
 *****************************************************************************/
 string get_req_filn(string s);
+/**
+* Removes trailing newlines and carriages
+*
+* This function will take in a string and
+* extract iterate through the string to remove
+* trailing newlines and carriages from the string.
+*
+* @param s String to process
+*****************************************************************************/
 void chomp(char *s);
 int
 main(int argc, char *argv[])
