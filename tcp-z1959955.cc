@@ -28,7 +28,8 @@ int r_file_to_buffer(int fd, char buffer[], int b_size);
 string get_req_dir(string s);
 string get_req_filn(string s);
 void chomp(char *s);
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
     char buffer[257];
     int sock, newSock;
@@ -320,7 +321,8 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int r_file_to_buffer(int fd, char buffer[], int b_size)
+int
+r_file_to_buffer(int fd, char buffer[], int b_size)
 {
     //read file into buffer
     ssize_t nr;
@@ -334,19 +336,22 @@ int r_file_to_buffer(int fd, char buffer[], int b_size)
     return nr;
 }
 
-string get_req_filn(string s) // get filename from request
+string
+get_req_filn(string s) // get filename from request
 {
     size_t loc = s.find_last_of('/'); // find last occurrence of /
     return s.substr(loc +1); // return everything following loc
 }
 
-string get_req_dir(string s) // get dir from request
+string
+get_req_dir(string s) // get dir from request
 {
     size_t loc = s.find_last_of('/'); // find last occurrence of /
     return s.substr(0, loc); // return a substring starting from index 0 to loc
 }
 
-void chomp(char *s)
+void
+chomp(char *s)
 {
     for(char *p = s + strlen(s)-1; *p == '\r' || *p == '\n'; p--)
     {
