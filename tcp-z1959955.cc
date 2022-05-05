@@ -53,6 +53,16 @@ int r_file_to_buffer(int fd, char buffer[], int b_size);
 * @result dir A directory
 *****************************************************************************/
 string get_req_dir(string s);
+/**
+* Extract the file name from a string
+*
+* This function will take in a string and
+* extract only the file name from the string
+* and return only the file name.
+*
+* @param s String to process
+* @result filename A file name
+*****************************************************************************/
 string get_req_filn(string s);
 void chomp(char *s);
 int
