@@ -1,6 +1,17 @@
-/* doc
- *
- */
+/*
+** Herbert Morales
+** zID: Z1959955
+** CSCI-330-0001
+** Assignment: 10 Simple HTTP SERVER
+**
+**
+** This program is a simple TCP server, it will accept requests in the form of GET / and attempt to search
+ * for the dir or file that the client types in. If a directory is passed in then the program will search for
+ * an index.html file, if one is present then it will send the contents of that file to the client. Otherwise
+ * a list of the files in the directory will be shown, if the directory does not exist then an error occurs.
+ * If a filename is passed in from the client then the program will search for that file, if found, the program
+ * will attempt to send the contents of the file to the client, otherwise an error is shown.
+*/
 
 #include <unistd.h>
 #include <sys/types.h>
