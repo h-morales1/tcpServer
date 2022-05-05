@@ -20,14 +20,12 @@ void chomp(char *s);
 int main(int argc, char *argv[])
 {
     char buffer[257];
-    //char reply[257];
     int sock, newSock;
     socklen_t serverlen, clientlen;
     ssize_t received;
     struct sockaddr_in echoserver; // structure address of server
     struct sockaddr_in echoclient; // structure address of client
     DIR* dire_argpath;
-    //struct dirent *dire_argpath_dirent;
 
 
     //exit if not enough arguments
@@ -46,11 +44,6 @@ int main(int argc, char *argv[])
         perror(argv[2]);
         exit(EXIT_FAILURE);
     }
-
-    /*while((dire_argpath_dirent = readdir(dire_argpath)) != NULL) // see whats in directory
-    {
-        cout << "Detected: " << dire_argpath_dirent->d_name << "\n";
-    }*/
 
     //create sock
     if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -80,16 +73,15 @@ int main(int argc, char *argv[])
     }
 
     //run until cancelled
-    //clientlen = sizeof(echoclient);
     while((newSock = accept(sock, (struct sockaddr*) &echoclient, &clientlen)) != -1)
     {
         if(fork())
         {
-            close(newSock);
+            close(newSock); // parent
         }
         else
         {
-            //forking
+            //child process
             cerr << "Client connected: " << inet_ntoa(echoclient.sin_addr) << '\n';
             if((received = read(newSock, buffer, 256)) == -1) // read from client
             {
@@ -98,27 +90,24 @@ int main(int argc, char *argv[])
             }
 
             buffer[received] = '\0';
-            chomp(buffer);
+            chomp(buffer); // remove trailing newline or carriage returns
 
-            cout << "Client wrote: " << buffer << "\n";
             //looking for file or directory
             string client_req = string(buffer);
             //trim off GET
-            cout << "Before trim: " << client_req << "\n";
             size_t pos = client_req.find("GET ");
             client_req.erase(pos, 4);
-            cout << "After trim: " << client_req << "\n";
-            cout << "SIZE: " << client_req.size() << "\n";
 
             //no directory passed in, just use webroot: req = GET /
             if(client_req.compare("/") == 0)
             {
-                cout << "TEST" << '\n';
                //check directory for an index.html
-               string webrt_files;
-               bool index_in_rt = false;
+               string webrt_files; // will store all file names in directory to display to user
+               bool index_in_rt = false; // was the index found in directory
+
                DIR* dire_wbrtpath;
                struct dirent *dire_wbrtpath_dirent;
+
                 //open dir passed in
                 dire_wbrtpath = opendir(argv[2]);
                 if(dire_wbrtpath == 0) // exit if path doesn't exist
@@ -140,7 +129,6 @@ int main(int argc, char *argv[])
                    {
                        if(f_name[0] != '.') // omit files starting with .
                        {
-                           //cout << f_name << " ";
                            webrt_files += (f_name + " ");
                        }
                    }
@@ -151,12 +139,11 @@ int main(int argc, char *argv[])
                    //index.html is found in webroot
                    //write contents of index to buffer
                    string wbr_index = wb_root_path + "/index.html";
-                   cout << "WBR: " << wbr_index << "\n";
                    int fd = open(wbr_index.c_str(), O_RDONLY);
                    ssize_t nr;
                    nr = r_file_to_buffer(fd, buffer, (sizeof(buffer)-1)); // put contents of file into buffer for client
 
-                   if(nr == -1)
+                   if(nr == -1) // exit if an error reading the file occurs
                    {
                        perror("reading file to buffer");
                        return 3;
@@ -167,7 +154,6 @@ int main(int argc, char *argv[])
                {
                    //index.html isnt found in webroot
                    //add webrt file list to buffer
-                   cout << "WEBRT FILES: " << webrt_files << '\n';
                    strncpy(buffer, webrt_files.c_str(), sizeof(buffer)); // add file list to buffer
                    buffer[sizeof(buffer)-1] = '\0';
                }
@@ -178,21 +164,20 @@ int main(int argc, char *argv[])
                 // its not just /, there is more, now detect if searching for file or dir
 
                 //is the last character in string a / <-- signifies dir
-                string temp_cl_rq = client_req;
+                string temp_cl_rq = client_req; // temp string to hold the directory sent by user/ or file
 
-                size_t cl_req_size = temp_cl_rq.length();
-                cout << "SIZE: " << cl_req_size << '\n';
-                char ending = temp_cl_rq.back();
-                cout << "Ending: " << ending << "\n";
-                if(ending == '/')
+                char ending = temp_cl_rq.back(); // get the last character in the request string
+                if(ending == '/') // is the last character a /, if so, then we are looking for a directory
                 {
                     //searching for dir
 
                     //concatenate webroot and the path passed in by user
-                    string final_path = argv[2] + client_req;
+                    string final_path = argv[2] + client_req; // complete path to search for directory
+
                     DIR* dire_fnpath;
                     struct dirent *dire_fnpath_dirent;
-                    dire_fnpath = opendir(final_path.c_str());
+
+                    dire_fnpath = opendir(final_path.c_str()); // open directory passed in by user
                     if(dire_fnpath == 0) // exit if path doesn't exist
                     {
                         string dir_not_ex = "Error: Directory " + final_path + " does not exist";
@@ -200,7 +185,7 @@ int main(int argc, char *argv[])
                         exit(EXIT_FAILURE);
                     }
                     //dir exists so find index.html
-                    string files_dir;
+                    string files_dir; // will store all file names found in the directory
                     bool found_index = false;
                     while((dire_fnpath_dirent = readdir(dire_fnpath)) != NULL) // look through dir
                     {
@@ -213,8 +198,7 @@ int main(int argc, char *argv[])
                         }
                         else
                         {
-                            // list all files in dir
-                            cout << fil_name << '\n';
+                            // omit files starting with .
                             if(fil_name[0] != '.')
                             {
                                 files_dir += (fil_name + " ");
@@ -229,7 +213,7 @@ int main(int argc, char *argv[])
                         ssize_t nr;
                         nr = r_file_to_buffer(fd, buffer, (sizeof(buffer)-1)); // put contents of file into buffer for client
 
-                        if(nr == -1)
+                        if(nr == -1) // exit if an error occurs while reading file into buffer
                         {
                             perror("reading file to buffer");
                             return 3;
@@ -246,10 +230,11 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
-                    //looking for file in dir  /fileOne.html
+                    //looking for file in dir
+
                     //split dir and filename from request
-                    string req_filename = get_req_filn(client_req);
-                    string req_dir = get_req_dir(client_req);
+                    string req_filename = get_req_filn(client_req); // use helper function to get filename
+                    string req_dir = get_req_dir(client_req); // use helper function to get only dir
                     req_dir = req_dir + "/";
                     //concatenate users directory with webroot
                     string final_req_dir = argv[2] + req_dir;
@@ -284,14 +269,14 @@ int main(int argc, char *argv[])
                     if(req_f_found)
                     {
                         //we found it so write its contents to buffer
-                        string not_found = "We found the file";
+                        //string not_found = "We found the file";
 
                         //write contents of index to buffer
                         final_req_dir = final_req_dir + req_filename;
                         int fd = open(final_req_dir.c_str(), O_RDONLY);
                         ssize_t nr;
                         nr = r_file_to_buffer(fd, buffer, (sizeof(buffer)-1)); // put contents of file into buffer for client
-                        if(nr == -1)
+                        if(nr == -1) // exit if an error occurs while reading file into buffer
                         {
                             perror("reading file to buffer");
                             return 3;
@@ -305,19 +290,15 @@ int main(int argc, char *argv[])
                         strncpy(buffer, not_found.c_str(), sizeof(buffer)); // add file list to buffer
                         buffer[sizeof(buffer)-1] = '\0';
                     }
-                    cout << "FILE: " << req_filename << '\n';
-                    cout << "DIR: " << req_dir << '\n';
-                    cout << "Looking for a file" << '\n';
                 }
 
             }
 
-            if((write(newSock, buffer, strlen(buffer))) == -1) // write to client n was changed from received to buffer size
+            if((write(newSock, buffer, strlen(buffer))) == -1) // write to client
             {
                 perror("write mismatch");
                 exit(3);
             }
-            sleep(3);
             close(newSock);
             exit(0);
         }
@@ -333,7 +314,7 @@ int r_file_to_buffer(int fd, char buffer[], int b_size)
     //read file into buffer
     ssize_t nr;
     nr = read(fd, buffer, b_size);
-    if(nr == -1)
+    if(nr == -1) // exit if an error occurs while reading file into buffer
     {
         return nr;
     }
@@ -344,17 +325,14 @@ int r_file_to_buffer(int fd, char buffer[], int b_size)
 
 string get_req_filn(string s) // get filename from request
 {
-    // /fileOne.html
-
-    size_t loc = s.find_last_of('/');
-    return s.substr(loc +1);
+    size_t loc = s.find_last_of('/'); // find last occurrence of /
+    return s.substr(loc +1); // return everything following loc
 }
 
 string get_req_dir(string s) // get dir from request
 {
-    // /dub/dub/fileOne.html OR /fileOne.html
-    size_t loc = s.find_last_of('/');
-    return s.substr(0, loc);
+    size_t loc = s.find_last_of('/'); // find last occurrence of /
+    return s.substr(0, loc); // return a substring starting from index 0 to loc
 }
 
 void chomp(char *s)
