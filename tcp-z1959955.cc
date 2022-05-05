@@ -28,12 +28,12 @@ using namespace std;
 * Read contents of a file into a buffer
 *
 * This function will take in a file descriptor,
- * a buffer to put the contents of a file into,
- * and the size of the buffer. It uses the read()
- * function and passes in all 3 parameters, if
- * an error occurs while reading the file into
- * the buffer, it will return a -1 and  be handled as an error.
- * Otherwise it returns the numbers written from the function.
+* a buffer to put the contents of a file into,
+* and the size of the buffer. It uses the read()
+* function and passes in all 3 parameters, if
+* an error occurs while reading the file into
+* the buffer, it will return a -1 and  be handled as an error.
+* Otherwise it returns the numbers written from the function.
 *
 * @param fd File descriptor
 * @param buffer Buffer to put file contents into
@@ -41,6 +41,17 @@ using namespace std;
 * @result nr Numbers written from function
 *****************************************************************************/
 int r_file_to_buffer(int fd, char buffer[], int b_size);
+
+/**
+* Extract the file directory from a string
+*
+* This function will take in a string and
+* extract only the directory from the string
+* and return only the directory.
+*
+* @param s String to process
+* @result dir A directory
+*****************************************************************************/
 string get_req_dir(string s);
 string get_req_filn(string s);
 void chomp(char *s);
